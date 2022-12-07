@@ -1,4 +1,6 @@
-(ns aoc2018-2)
+(ns aoc2018-2
+  (:require [clojure.java.io :as io])
+  (:require [clojure.math.combinatorics :as combo]))
 
 ;; 파트 1
 ;; 주어진 각각의 문자열에서, 같은 문자가 두번 혹은 세번씩 나타난다면 각각을 한번씩 센다.
@@ -12,6 +14,27 @@
 ;; abcdee 2개의 e -> (두번 나오는 문자열 수: 4, 세번 나오는 문자열 수: 2)
 ;; ababab 3개의 a, 3개의 b 지만 한 문자열에서 같은 갯수는 한번만 카운트함 -> (두번 나오는 문자열 수: 4, 세번 나오는 문자열 수: 3)
 ;; 답 : 4 * 3 = 12
+(def input (-> "aoc2018_2.sample.txt"
+               (io/resource)
+               (slurp)
+               (clojure.string/split-lines)))
+
+
+(defn p1 [freq-sets]
+  (apply *
+         (reduce (fn [[twice, thrice], freq-set]
+                   (cond (and (contains? freq-set 2) (contains? freq-set 3)) [(inc twice) (inc thrice)]
+                         (contains? freq-set 2) [(inc twice) thrice]
+                         (contains? freq-set 3) [twice (inc thrice)]
+                         :else [twice thrice])
+                   )
+                 [0 0]
+                 freq-sets)))
+(comment
+  (->> (map (comp set vals frequencies) input)
+       p1)
+  )
+
 
 
 ;; 파트 2
@@ -26,7 +49,30 @@
 ;; wvxyz
 
 ;; 주어진 예시에서 fguij와 fghij는 같은 위치 (2번째 인덱스)에 정확히 한 문자 (u와 h)가 다름. 따라서 같은 부분인 fgij를 리턴하면 됨.
+(def input2 (-> "aoc2018_2.sample.txt"
+               (io/resource)
+               (slurp)
+               (clojure.string/split-lines)))
 
+
+(defn p2 [[s1 s2]]
+  (->> (map (fn [s1char s2char] (if (= s1char s2char) 0 1)) s1 s2)
+       (apply +)
+       (= 1))
+  )
+
+(defn p22 [[s1 s2]]
+  (->> (apply map hash-map s1 s2))
+        (prn))
+
+(comment
+  (->> (combo/combinations input2 2)
+       (filter p2)
+       first
+       (apply map (fn [s1char s2char] (if (= s1char s2char) s1char)))
+       (clojure.string/join)
+       )
+  )
 
 ;; #################################
 ;; ###        Refactoring        ###
