@@ -105,13 +105,6 @@
 
 (solve-p2-using-for)
 
-(comment
-  (generate-combinations-from-string-list-using-recur `("1" "2" "3" "4"))
-  (->> (generate-combinations-from-string-list-using-for `("1" "2" "3" "4"))
-       (reduce (fn [list pairs] (clojure.set/union list pairs)) `()))
-
-  )
-
 ;; #################################
 ;; ###        Refactoring        ###
 ;; #################################

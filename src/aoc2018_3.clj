@@ -34,12 +34,12 @@
            (map #(Integer/parseInt %))
            (zipmap [:line :x :y :width :height])))))
 
-(defn record-to-coordinate-list [record]
+(defn record-to-coordinate-list [{:keys [x y width height]}]
   "{:line :x :y :width :height} 를 ['x:y', 'x:y+1' ... 'x+width:y+height'] 형태로 변환 "
-  (let [base-x (record :x)
-        base-y (record :y)]
-    (for [x (range base-x (+ base-x (record :width)))
-          y (range base-y (+ base-y (record :height)))]
+  (let [base-x x
+        base-y y]
+    (for [x (range base-x (+ base-x width))
+          y (range base-y (+ base-y height))]
       (apply str [x ":" y])
       )))
 
@@ -65,10 +65,11 @@
        (count)))
 
 (defn generate-matrix [records]
-  (loop [recs records
+  (reduce #((->> (record-to-coordinate-list %2)
+                 (apply-coordinates-to-matrix %1)) {} records))
+  #_(loop [recs records
          mat {}]
     (if (empty? recs)
-      ; 겹친 횟수가 1 이상인 좌표 갯수 리턴
       mat
       (recur (rest recs)
              (->> (record-to-coordinate-list (first recs))
@@ -81,8 +82,12 @@
 (defn solve1 []
   (->> (process-input-to-records input)
        (generate-matrix)
-       (count-more-than-once-checked)
-       ))
+       (count-more-than-once-checked)))
+
+(defn solve11 []
+  (->> (-> (process-input-to-records input))
+       (generate-matrix)
+       (count-more-than-once-checked)))
 
 (solve1)
 
@@ -90,21 +95,22 @@
 ;; 입력대로 모든 격자를 채우고 나면, 정확히 한 ID에 해당하는 영역이 다른 어떤 영역과도 겹치지 않음
 ;; 위의 예시에서는 ID 3 이 ID 1, 2와 겹치지 않음. 3을 출력.
 ;; 겹치지 않는 영역을 가진 ID를 출력하시오. (문제에서 답이 하나만 나옴을 보장함)
-(defn check-is-unique-coords [refined-matrix coordinates]
+(defn unique-coords? [refined-matrix coordinates]
   (->> (clojure.set/intersection coordinates refined-matrix)
        (count)
        (= (count coordinates))
        )
   )
 
-(defn check-if-records-has-unique-area-in-refined-matrix [records refined-matrix]
+(defn find-line-which-records-has-unique-area-in-refined-matrix [records refined-matrix]
   "matrix는 1번만 체크된 애들만 정제하여 들고 있고, 레코드의 모든 좌표가 해당 matrix에 존재하면 유일하게 겹치지 않는 영역이다"
+  #_(reduce (fn [mat coords] (let []) (if () (reduced (record :line)))))
   (loop [recs records]
     (if (empty? recs)
       nil
       (let [record (first recs)
             coords (into #{} (record-to-coordinate-list record))
-            is-unique (check-is-unique-coords refined-matrix coords)]
+            is-unique (unique-coords? refined-matrix coords)]
         (if (true? is-unique)
           (record :line)
           (recur (rest recs))
@@ -115,19 +121,16 @@
   )
 
 (defn find-answer-line [records matrix]
-  (->> (filter #(= 1 (val %)) matrix)
-       (mapv #(first %))
+  (->> (filter #(< 1 (val %)) matrix)
+       (map #(first %))
        (into #{})
-       (check-if-records-has-unique-area-in-refined-matrix records))
+       (find-line-which-records-has-unique-area-in-refined-matrix records))
   )
 
 (defn solve2 []
   (let [records (process-input-to-records input)]
-    (->> (generate-matrix {} records)
+    (->> (generate-matrix records)
          (find-answer-line records)
-         ))
-  )
+         )))
 
-(comment
-  (solve2)
-  )
+(solve2)
