@@ -98,26 +98,45 @@
               )
             ) {} schedule-groups))
 
-; reduce 함수 분리
+(defn get-most-sleepy-guard-id [guard-id-work-minutes-map]
+  (let [guard-ids (keys guard-id-work-minutes-map)]
+    (->> (for [guard-id guard-ids]
+           [guard-id (count (get guard-id-work-minutes-map guard-id))])
+         (sort-by second)
+         last
+         first)
+    ))
+
+(defn get-result [guard-id-work-minutes-map]
+  (let [most-sleepy-guard-id (get-most-sleepy-guard-id guard-id-work-minutes-map)
+        most-sleepy-guard-sleep-freq (frequencies (get guard-id-work-minutes-map most-sleepy-guard-id))]
+    (->> most-sleepy-guard-sleep-freq
+         (sort-by second)
+         last
+         first
+         (* most-sleepy-guard-id)
+         )
+    )
+  )
+
 (defn make-guard-schedule-group [schedules]
   (->> schedules
        (partition-by #(contains? % :guard))
        (partition 2)
-        generate-guard-id-work-minutes-map
+       generate-guard-id-work-minutes-map
        )
   )
 
-
-(defn get-most-sleepy-guard-id [data]
-  )
-
-(comment
+(defn solve1 [input]
   (->> (parse-input input)
        (sort-schedules)
        (increase-day-if-hour-over-23)
        (make-guard-schedule-group)
-       ;(get-most-sleepy-guard-id)
-       )
+       get-result)
+  )
+
+(comment
+  (solve1 input)
   )
 
 ;; 파트 2
