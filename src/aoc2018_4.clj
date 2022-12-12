@@ -30,11 +30,6 @@
 ;; 만약 20번 가드가 0시 10분~36분, 다음날 0시 5분~11분, 다다음날 0시 11분~13분 이렇게 잠들어 있었다면, “11분“이 가장 빈번하게 잠들어 있던 ‘분’. 그럼 답은 20 * 11 = 220.
 (def input (slurp "resources/4.txt"))
 
-(def shift-line "[1518-11-05 00:03] Guard #99 begins shift")
-(def asleep-line "[1518-11-01 00:05] falls asleep")
-(def wake-up-line "[1518-11-01 00:25] wakes up")
-
-
 ;; {:guard 1 {[0 20 1 1 2 12]}}
 
 (defn line-to-number-list [line repeat-count]
@@ -71,7 +66,8 @@
                  {:year 1518, :month 11, :day 4, :hour 0, :minute 36, :sleep? true}))
 
 (defn sort-schedules [schedules]
-  (->> (sort-by :minute schedules)
+  (->>
+        (sort-by :minute schedules)
        (sort-by :hour)
        (sort-by :day)
        (sort-by :month)))
@@ -85,26 +81,42 @@
            schedule)
          ) schedules))
 
-(defn calc [guard-schedules-group]
-  (let [guard (:guard (first guard-schedules-group))
-        schedules-group (partition 2 (second guard-schedules-group))]
+(defn generate-guard-id-work-minutes-map [schedule-groups]
+  (reduce (fn [m group]
+            (let [guard-id (get (ffirst group) :guard)
+                  sleep-awake-group (partition 2 (second group))]
+              (->> (get m guard-id ())
+                   (clojure.set/union (for [[start end] sleep-awake-group]
+                                        (range
+                                          (get start :minute)
+                                          (get end :minute)
+                                          )
+                                        )
+                                      )
+                   (flatten)
+                   (assoc m guard-id))
+              )
+            ) {} schedule-groups))
 
-    )
-  )
-
+; reduce 함수 분리
 (defn make-guard-schedule-group [schedules]
   (->> schedules
        (partition-by #(contains? % :guard))
        (partition 2)
+        generate-guard-id-work-minutes-map
        )
   )
 
+
+(defn get-most-sleepy-guard-id [data]
+  )
 
 (comment
   (->> (parse-input input)
        (sort-schedules)
        (increase-day-if-hour-over-23)
        (make-guard-schedule-group)
+       ;(get-most-sleepy-guard-id)
        )
   )
 
