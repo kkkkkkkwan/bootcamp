@@ -1,5 +1,6 @@
 (ns aoc2018_4
   (:require [clojure.string :as str]))
+
 ;; 파트 1
 ;; 입력:
 
@@ -40,53 +41,19 @@
 
 (defn parse-input [input]
   (for [line (str/split-lines input)]
-    (cond (str/includes? line "shift") (line-to-number-list line 6)
-          (str/includes? line "asleep") (assoc (line-to-number-list line 5) :sleep? true)
-          :else (assoc (line-to-number-list line 5) :sleep? false))
+    (cond (str/includes? line "shift") (line-to-number-list line 6) 
+          :else (line-to-number-list line 5))
     ))
 
-(parse-input input)
-
-(def schedules `({:year 1518, :month 11, :day 5, :hour 0, :minute 45, :sleep? true}
-                 {:year 1518, :month 11, :day 1, :hour 0, :minute 5, :sleep? true}
-                 {:year 1518, :month 11, :day 2, :hour 0, :minute 50, :sleep? false}
-                 {:year 1518, :month 11, :day 1, :hour 0, :minute 30, :sleep? true}
-                 {:year 1518, :month 11, :day 1, :hour 0, :minute 55, :sleep? false}
-                 {:year 1518, :month 11, :day 5, :hour 0, :minute 3, :guard 99}
-                 {:year 1518, :month 11, :day 4, :hour 0, :minute 2, :guard 99}
-                 {:year 1518, :month 11, :day 4, :hour 0, :minute 46, :sleep? false}
-                 {:year 1518, :month 11, :day 5, :hour 0, :minute 55, :sleep? false}
-                 {:year 1518, :month 11, :day 2, :hour 0, :minute 40, :sleep? true}
-                 {:year 1518, :month 11, :day 3, :hour 0, :minute 5, :guard 10}
-                 {:year 1518, :month 11, :day 3, :hour 0, :minute 24, :sleep? true}
-                 {:year 1518, :month 11, :day 1, :hour 0, :minute 0, :guard 10}
-                 {:year 1518, :month 11, :day 3, :hour 0, :minute 29, :sleep? false}
-                 {:year 1518, :month 11, :day 1, :hour 0, :minute 25, :sleep? false}
-                 {:year 1518, :month 11, :day 1, :hour 23, :minute 58, :guard 99}
-                 {:year 1518, :month 11, :day 4, :hour 0, :minute 36, :sleep? true}))
-
 (defn sort-schedules [schedules]
-  (->>
-        (sort-by :minute schedules)
-       (sort-by :hour)
-       (sort-by :day)
-       (sort-by :month)))
-
-(defn increase-day-if-hour-over-23 [schedules]
-  (map (fn [schedule]
-         (if (= (:hour schedule) 23)
-           (-> (update schedule :day inc)
-                (assoc :hour 0)
-                (assoc :minute 0))
-           schedule)
-         ) schedules))
+  (->> (sort-by (juxt :month :day :hour :minute) schedules)))
 
 (defn generate-guard-id-work-minutes-map [schedule-groups]
   (reduce (fn [m group]
-            (let [guard-id (get (ffirst group) :guard)
-                  sleep-awake-group (partition 2 (second group))]
+            (let [guard-id (get (last (first group)) :guard)
+                  sleep-awake-groups (partition 2 (second group))]
               (->> (get m guard-id ())
-                   (clojure.set/union (for [[start end] sleep-awake-group]
+                   (merge (for [[start end] sleep-awake-groups]
                                         (range
                                           (get start :minute)
                                           (get end :minute)
@@ -102,18 +69,17 @@
   (let [guard-ids (keys guard-id-work-minutes-map)]
     (->> (for [guard-id guard-ids]
            [guard-id (count (get guard-id-work-minutes-map guard-id))])
-         (sort-by second)
-         last
-         first)
+         (sort-by second >)
+         ffirst
+         )
     ))
 
 (defn get-result [guard-id-work-minutes-map]
   (let [most-sleepy-guard-id (get-most-sleepy-guard-id guard-id-work-minutes-map)
         most-sleepy-guard-sleep-freq (frequencies (get guard-id-work-minutes-map most-sleepy-guard-id))]
     (->> most-sleepy-guard-sleep-freq
-         (sort-by second)
-         last
-         first
+         (sort-by second >)
+         ffirst
          (* most-sleepy-guard-id)
          )
     )
@@ -130,14 +96,16 @@
 (defn solve1 [input]
   (->> (parse-input input)
        (sort-schedules)
-       (increase-day-if-hour-over-23)
        (make-guard-schedule-group)
-       get-result)
+       get-result
+       )
   )
 
 (comment
   (solve1 input)
   )
+
+
 
 ;; 파트 2
 ;; 주어진 분(minute)에 가장 많이 잠들어 있던 가드의 ID과 그 분(minute)을 곱한 값을 구하라.
