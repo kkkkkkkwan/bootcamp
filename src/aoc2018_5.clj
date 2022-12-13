@@ -15,28 +15,31 @@
                str/trim-newline))
 
 (defn react? [char1 char2]
-  (if (and (some? char1) (some? char2))
-    (and
-      (not= char1 char2)
-      (= (str/lower-case char1) (str/lower-case char2))
-      )
-    false
-    )
+  (and
+    (not= char1 char2)
+    (= (str/lower-case char1) (str/lower-case char2)))
+  )
 
+(comment
+  (react? "A" "a")
   )
 
 (defn solve1 [char-list]
   (->> (reduce (fn [result x]
-                 (if (react? x (first result))
+                 (if (and (seq result) (react? x (first result)))
                    (rest result)
-                   (cons x result)
-                   )
-                 ) [(first char-list)] (rest char-list))
+                   (conj result x)))
+               `()
+               char-list
+               )
        (count))
   )
 
 (comment
   (solve1 input)
+  (cons {"Asdf" 11} {"1234" 22})
+  (conj {"Asdf" 11} {"1234" 22})
+  (merge {"Asdf" 11} {"1234" 22})
   )
 
 ;; 파트 2
@@ -48,9 +51,11 @@
 (defn remove-each-char-from-string-to-list [string]
   (for [char a-to-z]
     (-> string
-        (str/replace (re-pattern (str #"(?i)"char)) "")
-        str/trim)
-    )
+        (str/replace (re-pattern (str #"(?i)" char)) "")
+        str/trim))
+  #_(map #((-> %
+             (str/replace (re-pattern (str #"(?i)" char)) "")
+             str/trim)) a-to-z)
   )
 
 (comment
@@ -62,9 +67,7 @@
   (->> input
        remove-each-char-from-string-to-list
        (map solve1)
-       sort
-       first
-       )
+       (apply min))
   )
 
 (comment
