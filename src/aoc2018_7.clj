@@ -95,3 +95,23 @@
 (comment
   (solve1 graph)
   )
+
+(defn char-to-time [base char]
+  (->> char
+       (map int)
+       (apply +)
+       (- (int \A))
+       Math/abs
+       (+ 1 base)
+       )
+  )
+
+(comment
+  (int "A")
+  (map int "A")
+  (char-to-time 60 "A")
+  )
+
+(defn process-parallel [graph workers]
+
+  )
