@@ -109,3 +109,8 @@
 
 ;; 파트 2
 ;; 주어진 분(minute)에 가장 많이 잠들어 있던 가드의 ID과 그 분(minute)을 곱한 값을 구하라.
+(comment
+  (->> (parse-input input)
+       (sort-schedules)
+       (make-guard-schedule-group))
+  )

@@ -52,17 +52,23 @@
        )
   )
 
+(comment
+  (prn input))
+
 (defn manhattan-distance
   [[x1 y1] [x2 y2]]
   (+ (Math/abs (- x1 x2)) (Math/abs (- y1 y2))))
 
 (defn get-matrix-area [coords]
   "유효한 행렬 범위를 구함. [min-x max-x min-y max-y] 예제에서는 [1 8 1 9]"
-  (vector (apply min (map first coords))
-          (apply max (map first coords))
-          (apply min (map second coords))
-          (apply max (map second coords))
-          )
+  (let [xs (map first coords)
+        ys (map second coords)]
+    (vector (apply min xs)
+            (apply max xs)
+            (apply min ys)
+            (apply max ys)
+            )
+    )
   )
 
 (defn calculate-manhattan-distance-for-each-coord [coords x y]
@@ -74,30 +80,32 @@
 
 (defn closest-coord [coords x y]
   "각 좌표에 대해 기준점에 대한 맨하탄 거리를 구하고, 거리가 같으면 nil, 같지 않으면 맨하탄거리가 제일 가까운 점을 [기준점x 기준점y] 형태로 반환"
-  (let [distances (calculate-manhattan-distance-for-each-coord coords x y)]
+  (let [[f s & _] (calculate-manhattan-distance-for-each-coord coords x y)]
     ; ([4 [1 1]] [4 [5 5]] [5 [8 3]] [5 [3 4]] [9 [1 6]] [11 [8 9]]) -> 4 4 로 맨하탄 거리가 같으므로 -> nil
     ; ([1 [1 1]] [4 [3 4]] [6 [1 6]] [7 [5 5]] [8 [8 3]] [14 [8 9]]) -> 1 4 로 [1 1]좌표가 제일 가까우므로 -> [1 1]
-    (when-not (= (ffirst distances) (first (second distances)))
-      (second (first distances)))))
+    (when-not (= (first f) (first s))
+      (second f))))
 
 
 (defn generate-result-matrix [coords [x1 x2 y1 y2]]
   "유효한 매트릭스 범위 내에서 가장 가까운 점을 나열"
   ; [1 1] [1 1] [1 1] [1 1] nil   [8 3] [8 3] [8 3]
   ; [1 1] [1 1] [3 4] [3 4] [5 5] [8 3] [8 3] [8 3]
+  ; ...
   ; ... -> ([1 1] [1 1] [1 1] [1 1] nil   [8 3] [8 3] [8 3] [1 1] [1 1] [3 4] [3 4] [5 5] [8 3] [8 3] [8 3]...)
-  (->> (for [y (range y1 (inc y2))
-             x (range x1 (inc x2))]
-    (closest-coord coords x y))))
+  (for [y (range y1 (inc y2))
+        x (range x1 (inc x2))]
+    (closest-coord coords x y)))
 
 (defn solve1 [coords]
     (->> coords
          get-matrix-area
          (generate-result-matrix coords)
-         frequencies
-         (sort-by second >)
-         first
-         second))
+         frequencies ;([1 1] 20 [8 3] 10)
+         #_(sort-by val >)
+         (apply max-key val)
+         second
+         ))
 
 (comment
   (solve1 input)
@@ -129,10 +137,14 @@
 ;; N이 10000 미만인 안전한 지역의 사이즈를 구하시오.
 
 (defn get-manhattan-distance-sum [coords [x1 x2 y1 y2]]
-  "각 좌표의 모든 기준점에 대한 거리 합을 구함"
+  "각 좌표의 모든 기준점에 대한 거리 합을 구함 m*n"
   (for [y (range y1 (inc y2))
         x (range x1 (inc x2))]
-    (reduce + (for [coord coords] (manhattan-distance coord [x y])))))
+    (->> (map (fn [coord] (manhattan-distance coord [x y])) coords)
+         (apply +)
+         )
+    )
+  )
 
 (defn solve2 [coords N]
   (->> (get-matrix-area coords)
@@ -141,5 +153,5 @@
        count))
 
 (comment
-  (solve2 input)
+  (solve2 input 10000)
   )
