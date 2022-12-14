@@ -10,6 +10,7 @@
                str/split-lines
                parse-input))
 (def all-nodes
+  "존재하는 모든 node들을 나열"
   (-> input
       flatten
       set
@@ -19,14 +20,23 @@
   (prn all-nodes)
   )
 
-(defn conj-in-sorted [m k v]
-  (if-let [nodes (get m k)]
-    (assoc m k (conj nodes v))
-    (assoc m k (sorted-set v))))
+(defn insert-relationship-to-graph [m k v]
+  "그래프에 노드간의 관계를 추가."
+  (assoc
+    m
+    k
+    (conj (get
+            m
+            k
+            (sorted-set v))
+          v
+          )
+    )
+  )
 
 (def graph (reduce
              (fn [coll pair]
-               (apply conj-in-sorted coll pair))
+               (apply insert-relationship-to-graph coll pair))
              {}
              (map reverse input)
              )
@@ -61,8 +71,8 @@
       (let [next-step (first available-nodes)
             new-graph (remove-node-from-graph base-graph next-step)
             new-available-nodes (apply sorted-set
-                                 (difference (set (keys base-graph))
-                                             (set (keys new-graph))))]
+                                       (difference (set (keys base-graph))
+                                                   (set (keys new-graph))))]
         (recur new-graph
                (union new-available-nodes (disj available-nodes next-step))
                (conj result next-step)))
