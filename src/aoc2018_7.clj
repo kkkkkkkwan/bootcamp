@@ -41,6 +41,9 @@
              (map reverse input)
              )
   )
+(comment
+  (prn graph)
+  )
 
 (def can-remove-nodes
   (->> input
@@ -50,8 +53,12 @@
        (apply sorted-set)
        )
   )
+(comment
+  (prn can-remove-nodes)
+  )
 
 (defn remove-node-from-graph [graph remove-target-node]
+  "그래프에서 특정 노드를 모두 제거한다. 제거후 특정 노드에대한 dependency가 모두 없어지면 그래프에서 해당 노드를 키로 하는 데이터가 없어진다."
   (reduce-kv (fn [m node node-needs]
                (let [visited (disj node-needs remove-target-node)]
                  (if (seq visited) (assoc m node visited) m))
@@ -61,9 +68,10 @@
 (comment
   (prn graph)
   (remove-node-from-graph graph "C")
+  (remove-node-from-graph graph "A")
   )
 
-(defn remove-all [graph]
+(defn remove-all-and-get-sequence [graph]
   (loop [base-graph graph
          available-nodes can-remove-nodes
          result []]
@@ -80,7 +88,7 @@
 
 (defn solve1 [input]
   (->> input
-       remove-all
+       remove-all-and-get-sequence
        (apply str))
   )
 
