@@ -9,6 +9,10 @@
                slurp
                str/split-lines
                parse-input))
+(comment
+  (prn input)
+  )
+
 (def all-nodes
   "존재하는 모든 node들을 나열"
   (-> input
@@ -115,3 +119,34 @@
 (defn process-parallel [graph workers]
 
   )
+
+; 참고 -> 2020 day 8
+;{
+; :graph {
+;         "T" #{"C" "F" "H" "J" "L" "R" "W"},
+;         "K" #{"I" "N" "R"},
+;         "Q" #{"C" "F" "N" "V"},
+;         "G" #{"E" "H" "I" "K" "P" "Q" "S" "U" "Y"},
+;         "J" #{"D"},
+;         "M" #{"L"},
+;         "S" #{"E" "O" "U" "W" "Z"},
+;         "Y" #{"E" "H" "K" "O" "Q" "S" "T" "X"},
+;         "Z" #{"B" "C" "E" "H" "I" "R" "X"},
+;         "H" #{"N" "V" "W"},
+;         "E" #{"I" "T"},
+;         "R" #{"B" "N" "W"},
+;         "C" #{"D"},
+;         "F" #{"L"},
+;         "P" #{"B" "C" "J" "K" "M" "N" "O" "Q" "T" "W" "Y" "Z"},
+;         "V" #{"D" "F"},
+;         "U" #{"E" "J" "K" "N" "Q" "T" "W"},
+;         "O" #{"F" "K" "R" "T" "U" "X"},
+;         "X" #{"C" "H" "J" "M" "Q"},
+;         "N" #{"B"},
+;         "I" #{"B" "D" "F" "H" "J" "W"}
+;         }
+; :after-graph {}
+; :pool [[] [] [] [] []]
+; :pool-size 5
+; :next  ("A" "B" "C")
+; }
