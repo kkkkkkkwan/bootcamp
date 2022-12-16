@@ -5,7 +5,7 @@
 (defn parse-input [lines]
   (map (fn [line] (re-seq #"\b[A-Z]+\b" line)) lines))
 
-(def input (-> "resources/7.txt"
+(def input (-> "resources/7.example.txt"
                slurp
                str/split-lines
                parse-input))
@@ -133,7 +133,7 @@
        )
   )
 
-(def pool-sample {:A 1, :B 4, :C 3, :D 5, :E 6})
+(def pool-sample {:A 0 :B 0})
 
 (defn get-can-remove-nodes-in-graph [graph next-graph]
   (apply sorted-set
@@ -147,10 +147,11 @@
 
 (defn remove-done-job [pool]
   "남은 시간인 0인 노드를 찾아내어 :pool pool :done `node` 형태로 반환한다"
-  (let [[[job _]] (filter #(= 0 (second %)) pool)]
-    (if job
-      {:pool (dissoc pool job) :done (name job)}
-      {:pool pool}
+  (let [jobs (filter #(= 0 (second %)) pool)
+        job_keys (keys jobs)]
+    (if jobs
+      {:removed-pool (apply dissoc pool job_keys) :done (map #(name %) job_keys)}
+      {:removed-pool pool :done nil}
       )
     )
   )
@@ -163,62 +164,79 @@
    {:pool {:B 3, :C 2, :D 4, :E 5}, :done 'A'}
    {:pool {:A 7 :B 3, :C 2, :D 4, :E 5}}
    "
-  (prn pool)
-  (->> pool
-       (map (fn [[key value]] {key (dec value)}))
-       (apply merge)
-       remove-done-job
-       )
+  (if (empty? pool)
+    {}
+    (->> pool
+         (mapv (fn [[key value]] {key (dec value)}))
+         (apply merge)
+         remove-done-job
+    ))
   )
 
 (comment
-  (process-one-tick pool-sample)
+  (process-one-tick {:A 61, :B 62, :L 72})
+  )
+
+(defn apply-available-nodes-to-pool [can-remove-nodes pool max-pool-size base-time]
+  (let [empty-pool-size (- max-pool-size (count pool))
+        next-nodes (take empty-pool-size can-remove-nodes)]
+    {
+     :applied-nodes next-nodes
+     :added-pool (conj pool (apply merge (mapv (fn [node] {(keyword node) (char-to-time base-time node)}) next-nodes)))
+     :next-available-nodes (apply disj can-remove-nodes next-nodes)
+     }
+    )
+  )
+
+(comment
+  (apply-available-nodes-to-pool
+    (sorted-set "E" "N" "W" "Q" "S" "D" "A")
+    {}
+    5
+    60
+    )
+  )
+
+(defn apply-nodes-to-graph [graph applied-nodes]
+  (reduce (fn [graph node] (remove-node-from-graph graph node)) graph applied-nodes)
   )
 
 (defn process [{:keys [can-remove-nodes graph pool max-pool-size done-list base-time elapsed-time]}]
-  (prn can-remove-nodes graph pool done-list)
-  (if (= (count pool) max-pool-size)
-    (let [{:keys [new-pool done]} (process-one-tick pool)]
-      {:can-remove-nodes can-remove-nodes
-       :graph            graph
-       :pool             new-pool
+  (let [{:keys [removed-pool done]} (process-one-tick pool)
+        {:keys [applied-nodes
+                next-available-nodes
+                added-pool]} (apply-available-nodes-to-pool can-remove-nodes removed-pool max-pool-size base-time)
+        new-graph (apply-nodes-to-graph graph applied-nodes)
+        new-available-after-remove-nodes (get-can-remove-nodes-in-graph graph new-graph)
+        ]
+    (if (and (empty? can-remove-nodes) (empty? pool))
+      {:end elapsed-time}
+      {:graph            new-graph
+       :can-remove-nodes (union new-available-after-remove-nodes next-available-nodes)
+       :pool             (into {} added-pool)
        :done-list        (into done-list done)
        :max-pool-size    max-pool-size
        :base-time        base-time
        :elapsed-time     (inc elapsed-time)}
       )
-    (if (empty? can-remove-nodes)
-      ;; 다음 수행할 수 있는 노드가 비었을 때
-      "D"
-      ;; 비지 않았을 때
-      (let [next-node (first can-remove-nodes)
-            new-graph (remove-node-from-graph graph next-node)
-
-            ]
-        (prn (process-one-tick (conj pool {(keyword next-node) (char-to-time base-time next-node)})))
-        {:can-remove-nodes (get-can-remove-nodes-in-graph graph new-graph)
-         :graph            new-graph
-         :pool             pool
-         :done-list        done-list
-         :max-pool-size    max-pool-size
-         :base-time        base-time
-         :elapsed-time     (inc elapsed-time)}
-        )
-      )
-
     )
   )
 
-(def initial-state {:can-remove-nodes can-remove-nodes
+(def initial-state {:can-remove-nodes (sorted-set "C")
                     :graph            graph
-                    :pool             []
-                    :max-pool-size    5
+                    :pool             {}
+                    :max-pool-size    2
                     :done-list        []
-                    :base-time        2
-                    :elapsed-time     0})
+                    :base-time        1
+                    :elapsed-time     -1})
+
+(defn has-end? [state]
+  (contains? state :end)
+  )
 
 (comment
-  (->> initial-state
-       (process)
+    (->> initial-state
+         (iterate process)
+         (take 17)
        )
   )
